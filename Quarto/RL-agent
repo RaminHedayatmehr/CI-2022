@@ -1,1 +1,41 @@
+import random
+import numpy as np
 
+class QuartoRLAgent:
+  def __init__(self, alpha=0.1, discount_factor=0.9, exploration_prob=0.1):
+    self.alpha = alpha
+    self.discount_factor = discount_factor
+    self.exploration_prob = exploration_prob
+    self.state_value_table = dict()
+  
+  def choose_action(self, state, possible_actions):
+    if random.uniform(0, 1) <= self.exploration_prob:
+      # explore by choosing a random action
+      action = random.choice(possible_actions)
+    else:
+      # exploit by choosing the action with the highest value
+      state_value = [self.get_value(state, action) for action in possible_actions]
+      action = possible_actions[np.argmax(state_value)]
+    return action
+  
+  def get_value(self, state, action):
+    if (state, action) not in self.state_value_table:
+      self.state_value_table[(state, action)] = 0
+    return self.state_value_table[(state, action)]
+  
+  def update(self, state, action, reward, new_state):
+    best_future_value = max([self.get_value(new_state, new_action) for new_action in possible_actions])
+    current_value = self.get_value(state, action)
+    new_value = current_value + self.alpha * (reward + self.discount_factor * best_future_value - current_value)
+    self.state_value_table[(state, action)] = new_value
+
+# Example usage of the agent
+agent = QuartoRLAgent()
+state = # Initial state of the game
+
+while not game_over:
+  possible_actions = # Get the possible actions from the current state
+  action = agent.choose_action(state, possible_actions)
+  new_state, reward = # Apply the action and get the new state and the reward
+  agent.update(state, action, reward, new_state)
+  state = new_state
