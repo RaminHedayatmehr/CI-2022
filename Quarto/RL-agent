@@ -1,41 +1,53 @@
-import random
 import numpy as np
+import copy
 
-class QuartoRLAgent:
-  def __init__(self, alpha=0.1, discount_factor=0.9, exploration_prob=0.1):
-    self.alpha = alpha
-    self.discount_factor = discount_factor
-    self.exploration_prob = exploration_prob
-    self.state_value_table = dict()
-  
-  def choose_action(self, state, possible_actions):
-    if random.uniform(0, 1) <= self.exploration_prob:
-      # explore by choosing a random action
-      action = random.choice(possible_actions)
-    else:
-      # exploit by choosing the action with the highest value
-      state_value = [self.get_value(state, action) for action in possible_actions]
-      action = possible_actions[np.argmax(state_value)]
-    return action
-  
-  def get_value(self, state, action):
-    if (state, action) not in self.state_value_table:
-      self.state_value_table[(state, action)] = 0
-    return self.state_value_table[(state, action)]
-  
-  def update(self, state, action, reward, new_state):
-    best_future_value = max([self.get_value(new_state, new_action) for new_action in possible_actions])
-    current_value = self.get_value(state, action)
-    new_value = current_value + self.alpha * (reward + self.discount_factor * best_future_value - current_value)
-    self.state_value_table[(state, action)] = new_value
+class MinimaxPlayer(Player):
 
-# Example usage of the agent
-agent = QuartoRLAgent()
-state = # Initial state of the game
+    def __init__(self, quarto) -> None:
+        super().__init__(quarto)
 
-while not game_over:
-  possible_actions = # Get the possible actions from the current state
-  action = agent.choose_action(state, possible_actions)
-  new_state, reward = # Apply the action and get the new state and the reward
-  agent.update(state, action, reward, new_state)
-  state = new_state
+    def choose_piece(self) -> int:
+        self.__best_piece = -1
+        _, self.__best_piece = self.minimax(self.__quarto, True)
+        return self.__best_piece
+
+    def place_piece(self) -> tuple[int, int]:
+        self.__best_x = -1
+        self.__best_y = -1
+        _, self.__best_x, self.__best_y = self.minimax(self.__quarto, False)
+        return self.__best_x, self.__best_y
+
+    def minimax(self, game, isMaximizing):
+        if game.is_game_over():
+            return game.evaluate(), -1, -1
+
+        if isMaximizing:
+            bestVal = -np.inf
+            piece = -1
+            for i in range(16):
+                if i not in game.get_board_status():
+                    game_copy = copy.deepcopy(game)
+                    if game_copy.select(i):
+                        val, _, _ = self.minimax(game_copy, False)
+                        if val > bestVal:
+                            bestVal = val
+                            piece = i
+            return bestVal, piece
+
+        else:
+            bestVal = np.inf
+            x = -1
+            y = -1
+            for i in range(4):
+                for j in range(4):
+                    if game.__placeable(i, j):
+                        game_copy = copy.deepcopy(game)
+                        game_copy.place(i, j)
+                        if game_copy.is_game_over():
+                            return game_copy.evaluate(), -1, -1
+                        val, _, _ = self.minimax(game_copy, True)
+                        if val < bestVal:
+                            bestVal = val
+                            x = i
+                            y = j
+            return bestVal, x, y
